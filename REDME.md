@@ -30,3 +30,12 @@
     [] Melhor sequência de refeições dentro da dieta
 
 [] O usuário só pode visualizar, editar e apagar as refeições o qual ele criou
+
+# Comandos 
+
+ * Criar uma Migration
+    - pnpm run knex -- migrate:make create-user
+ * Craiar uma tabela
+    - pnpm run knex -- migrate:latest
+ * Desfazer a ultima migration
+    - pnpm run knex -- migrate:rollback
