@@ -18,6 +18,7 @@ export async function snackRoutes(app: FastifyInstance){
 
         return {snacks}
     })
+
     app.post("/", async (request, reply) => {
        const createSnackBodySchema = z.object({
            name: z.string(),
@@ -45,5 +46,16 @@ export async function snackRoutes(app: FastifyInstance){
         })
 
         return reply.code(201).send("snack created")
+    })
+
+    app.delete("/:id", async (request, reply) => {
+        const getSnackIdSchema = z.object({
+            id: z.string()
+        })
+
+        const {id} = getSnackIdSchema.parse(request.params)
+        await knex('snack').where({id: id}).del()
+
+        return reply.send("snack deleted")
     })
 }
