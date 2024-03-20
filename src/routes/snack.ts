@@ -19,6 +19,18 @@ export async function snackRoutes(app: FastifyInstance){
         return {snacks}
     })
 
+    app.get("/:id", async (request, reply) => {
+        const getSnackIdSchema = z.object({
+            id: z.string()
+        })
+
+            const {id} = getSnackIdSchema.parse(request.params)
+            const snack = await knex('snack').where({id: id}).select().first()
+
+            return {snack}
+
+    })
+
     app.post("/", async (request, reply) => {
        const createSnackBodySchema = z.object({
            name: z.string(),
@@ -57,5 +69,37 @@ export async function snackRoutes(app: FastifyInstance){
         await knex('snack').where({id: id}).del()
 
         return reply.send("snack deleted")
+    })
+
+    app.patch("/:id", async (request, reply) => {
+        const createSnackBodySchema = z.object({
+            name: z.string().optional(),
+            description: z.string().optional(),
+            date: z.string().optional(),
+            diet: z.boolean().optional(),
+        })
+        const getSnackIdSchema = z.object({
+            id: z.string()
+        })
+        const {id} = getSnackIdSchema.parse(request.params)
+        const updateData = request.body;
+
+        const validData = createSnackBodySchema.parse(updateData);
+        const snack = await knex('snack').where({id: id}).select().first()
+
+        if(!snack){
+            return reply.status(404).send({
+                error: 'snack not found'
+            })
+
+        }
+
+        const updatedSnack = {
+            ...snack,
+            ...validData
+        }
+
+        await knex('snack').where('id', id).update(updatedSnack);
+        return reply.send("snack UPADATED")
     })
 }
