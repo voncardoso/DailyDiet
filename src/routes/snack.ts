@@ -10,6 +10,7 @@ export async function snackRoutes(app: FastifyInstance){
                 error: 'Unauthorized'
             })
         }
+
     })
 
     app.get("/", async (request, reply) => {
@@ -35,11 +36,10 @@ export async function snackRoutes(app: FastifyInstance){
        const createSnackBodySchema = z.object({
            name: z.string(),
            description: z.string(),
-           date: z.string(),
            diet: z.boolean(),
        })
 
-        const {name, description, date, diet} = createSnackBodySchema.parse(request.body)
+        const {name, description, diet} = createSnackBodySchema.parse(request.body)
         let sessionId = request.cookies.sessionId
         if(!sessionId) {
             sessionId = randomUUID()
@@ -48,11 +48,14 @@ export async function snackRoutes(app: FastifyInstance){
                 maxAge:  60 * 60 * 24 * 7 // 7 days
             })
         }
+
+
+
         await knex('snack').insert({
             id: randomUUID(),
             name,
             description,
-            date,
+            date: new Date().toISOString(),
             diet,
             user_id: sessionId
         })
@@ -67,6 +70,12 @@ export async function snackRoutes(app: FastifyInstance){
 
         const {id} = getSnackIdSchema.parse(request.params)
         await knex('snack').where({id: id}).del()
+
+        return reply.send("snack deleted")
+    })
+
+    app.delete("/", async (request, reply) => {
+        await knex('snack').del()
 
         return reply.send("snack deleted")
     })
@@ -101,5 +110,31 @@ export async function snackRoutes(app: FastifyInstance){
 
         await knex('snack').where('id', id).update(updatedSnack);
         return reply.send("snack UPADATED")
+    })
+
+    app.get("/summary", async (request, reply) => {
+        const {sessionId} = request.cookies
+        const snacks = await knex('snack').where({user_id: sessionId})
+
+        const some = snacks.reduce((acc, snack) => {
+             if(snack.diet){
+                 acc.diet += 1;
+                 return acc;
+             }else {
+                 acc.notDiet += 1;
+                 return acc;
+             }
+        }, {
+            diet: 0,
+            notDiet: 0
+        });
+
+
+        const summary = {
+            totalRefeicoes: snacks.length,
+            diet: some.diet,
+            notDiet: some.notDiet
+        }
+        return summary
     })
 }
